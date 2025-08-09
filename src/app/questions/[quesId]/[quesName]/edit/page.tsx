@@ -12,13 +12,14 @@ interface EditQuesPageProps {
 }
 
 const Page = async ({ params }: EditQuesPageProps) => {
+  const { quesId } = params;
+
   const doc = await databases.getDocument<QuestionDocument>(
     db,
     questionCollection,
-    params.quesId
+    quesId
   );
 
-  
   const question: QuestionDocument = {
     ...doc,
     title: doc.title ?? "",
