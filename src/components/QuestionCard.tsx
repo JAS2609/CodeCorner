@@ -24,14 +24,10 @@ export interface QuestionDocument extends Models.Document {
 }
 
 const QuestionCard = ({ ques }: { ques: QuestionDocument }) => {
-  const [height, setHeight] = React.useState(0);
+
   const ref = React.useRef<HTMLDivElement>(null);
 
-  React.useEffect(() => {
-    if (ref.current) {
-      setHeight(ref.current.clientHeight);
-    }
-  }, [ref]);
+  
 
   return (
     <div

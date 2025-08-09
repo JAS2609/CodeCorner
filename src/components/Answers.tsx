@@ -164,7 +164,7 @@ const Answers = ({
             <Comments
               comments={{
                 ...answer.comments,
-                documents: (answer.comments.documents as any[]).map((comment) => ({
+                documents: (answer.comments.documents as Models.Document[]).map((comment) => ({
                   content: comment.content ?? "",
                   authorId: comment.authorId ?? "",
                   author: comment.author ?? { $id: "", name: "", reputation: 0 },

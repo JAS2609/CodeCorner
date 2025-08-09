@@ -65,8 +65,12 @@ const Comments = ({
                     ...prev.documents,
                 ],
             }));
-        } catch (error: any) {
-            window.alert(error?.message || "Error creating comment");
+        } catch (error: unknown) {
+    if (error instanceof Error) {
+        window.alert(error.message);
+    } else {
+        window.alert("Error deleting answer");
+    }
         }
     };
 
