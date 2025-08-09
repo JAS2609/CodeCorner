@@ -6,9 +6,9 @@ import EditQues from "./EditQues";
 const Page = async ({
   params,
 }: {
-  params: Promise<{ quesId: string; quesName: string }>;
+  params: { quesId: string; quesName: string };
 }) => {
-  const { quesId } = await params;
+  const { quesId } = params; 
 
   const question = await databases.getDocument(db, questionCollection, quesId);
 
