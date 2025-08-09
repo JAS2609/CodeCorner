@@ -8,12 +8,25 @@ import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
 import slugify from "@/utils/slugify";
 import { IconX } from "@tabler/icons-react";
-import { Models, ID } from "appwrite";
+import { ID } from "appwrite";
 import { useRouter } from "next/navigation";
 import React from "react";
 import { databases, storage } from "@/models/client/config";
-import { db, questionAttachmentBucket, questionCollection } from "@/models/name";
+import {
+  db,
+  questionAttachmentBucket,
+  questionCollection,
+} from "@/models/name";
 import { Confetti } from "@/components/magicui/confetti";
+
+type QuestionDocument = {
+  $id: string;
+  title: string;
+  content: string;
+  authorId: string;
+  tags: string[];
+  attachmentId?: string | null;
+};
 
 const LabelInputContainer = ({
   children,
@@ -35,16 +48,16 @@ const LabelInputContainer = ({
   );
 };
 
-const QuestionForm = ({ question }: { question?: Models.Document }) => {
+const QuestionForm = ({ question }: { question?: QuestionDocument }) => {
   const { user } = useAuthStore();
   const [tag, setTag] = React.useState("");
   const router = useRouter();
 
   const [formData, setFormData] = React.useState({
-    title: String(question?.title || ""),
-    content: String(question?.content || ""),
-    authorId: user?.$id,
-    tags: new Set((question?.tags || []) as string[]),
+    title: question?.title || "",
+    content: question?.content || "",
+    authorId: user?.$id || "",
+    tags: new Set(question?.tags || []),
     attachment: null as File | null,
   });
 
@@ -110,10 +123,13 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
   const update = async () => {
     if (!question) throw new Error("Please provide a question");
 
-    let attachmentId = question?.attachmentId || null;
+    let attachmentId = question.attachmentId || null;
     if (formData.attachment) {
       if (attachmentId) {
-        await storage.deleteFile(questionAttachmentBucket, question.attachmentId);
+        await storage.deleteFile(
+          questionAttachmentBucket,
+          question.attachmentId!
+        );
       }
       const file = await storage.createFile(
         questionAttachmentBucket,
@@ -142,10 +158,8 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
   const submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Clean content for validation (strip HTML)
     const cleanContent = formData.content.replace(/<[^>]+>/g, "").trim();
 
-    // Validation checks
     if (!formData.title.trim()) {
       setError("Please enter a title");
       return;
@@ -191,7 +205,8 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
           Title Address
           <br />
           <small>
-            Be specific and imagine you&apos;re asking a question to another person.
+            Be specific and imagine you&apos;re asking a question to another
+            person.
           </small>
         </Label>
         <Input
@@ -211,8 +226,8 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
           What are the details of your problem?
           <br />
           <small>
-            Introduce the problem and expand on what you put in the title. Minimum 20
-            characters.
+            Introduce the problem and expand on what you put in the title.
+            Minimum 20 characters.
           </small>
         </Label>
         <RTE
@@ -250,8 +265,8 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
           Tags
           <br />
           <small>
-            Add tags to describe what your question is about. Start typing to see
-            suggestions.
+            Add tags to describe what your question is about. Start typing to
+            see suggestions.
           </small>
         </Label>
         <div className="flex w-full gap-4">
@@ -285,7 +300,7 @@ const QuestionForm = ({ question }: { question?: Models.Document }) => {
             <div key={index} className="flex items-center gap-2">
               <div className="group relative inline-block rounded-full bg-slate-800 p-px text-xs font-semibold leading-6 text-white no-underline shadow-2xl shadow-zinc-900">
                 <div className="relative z-10 flex items-center space-x-2 rounded-full bg-zinc-950 px-4 py-0.5 ring-1 ring-white/10">
-                  <span>{tag}</span>
+                  <span>{String(tag)}</span>
                   <button
                     onClick={() =>
                       setFormData((prev) => ({
