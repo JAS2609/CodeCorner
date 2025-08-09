@@ -1,3 +1,4 @@
+
 import Answers from "@/components/Answers";
 import Comments from "@/components/Comments";
 import { MarkdownPreview } from "@/components/RTE";
@@ -24,14 +25,20 @@ import DeleteQuestion from "./DeleteQuestion";
 import EditQuestion from "./EditQuestion";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 import { QuestionDocument } from "@/components/QuestionCard";
-
 const Page = async ({
-  params: { quesId },
+  params,
 }: {
-  params: { quesId: string; quesName: string };
+  params: Promise<{ quesId: string; quesName: string }>;
 }) => {
+
+  const { quesId, quesName } = await params;
+
   const [question, answers, upvotes, downvotes, comments] = await Promise.all([
-    databases.getDocument<QuestionDocument>(db, questionCollection, quesId),
+    databases.getDocument<QuestionDocument>(
+      db,
+      questionCollection,
+      quesId
+    ),
     databases.listDocuments<Models.Document>(db, answerCollection, [
       Query.orderDesc("$createdAt"),
       Query.equal("questionId", quesId),
