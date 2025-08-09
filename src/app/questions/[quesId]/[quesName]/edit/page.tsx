@@ -2,20 +2,23 @@ import { db, questionCollection } from "@/models/name";
 import { databases } from "@/models/server/config";
 import React from "react";
 import EditQues from "./EditQues";
-import { QuestionDocument } from "@/components/QuestionCard"; 
+import { QuestionDocument } from "@/components/QuestionCard";
 
-const Page = async ({
-  params,
-}: {
-  params: { quesId: string; quesName: string };
-}) => {
+interface EditQuesPageProps {
+  params: {
+    quesId: string;
+    quesName: string;
+  };
+}
+
+const Page = async ({ params }: EditQuesPageProps) => {
   const doc = await databases.getDocument<QuestionDocument>(
     db,
     questionCollection,
     params.quesId
   );
 
-  // Ensure it matches QuestionDocument structure
+  
   const question: QuestionDocument = {
     ...doc,
     title: doc.title ?? "",
