@@ -5,7 +5,7 @@ import { db, voteCollection } from "@/models/name";
 import { useAuthStore } from "@/store/auth";
 import { cn } from "@/lib/utils";
 import { IconCaretUpFilled, IconCaretDownFilled } from "@tabler/icons-react";
-import {  Models, Query } from "appwrite";
+import { ID, Models, Query } from "appwrite";
 import { useRouter } from "next/navigation";
 import React from "react";
 
@@ -22,8 +22,7 @@ const VoteButtons = ({
     downvotes: Models.DocumentList<Models.Document>;
     className?: string;
 }) => {
-    type VotedDocument = Models.Document & { voteStatus?: string };
-    const [votedDocument, setVotedDocument] = React.useState<VotedDocument | null>(); // undefined means not fetched yet
+    const [votedDocument, setVotedDocument] = React.useState<Models.Document | null>(); // undefined means not fetched yet
     const [voteResult, setVoteResult] = React.useState<number>(upvotes.total - downvotes.total);
 
     const { user } = useAuthStore();
@@ -64,12 +63,8 @@ const VoteButtons = ({
 
             setVoteResult(() => data.data.voteResult);
             setVotedDocument(() => data.data.document);
-        } catch (error: unknown) {
-    if (error instanceof Error) {
-        window.alert(error.message);
-    } else {
-        window.alert("Error deleting answer");
-    }
+        } catch (error: any) {
+            window.alert(error?.message || "Something went wrong");
         }
     };
 
@@ -95,12 +90,8 @@ const VoteButtons = ({
 
             setVoteResult(() => data.data.voteResult);
             setVotedDocument(() => data.data.document);
-        } catch (error: unknown) {
-    if (error instanceof Error) {
-        window.alert(error.message);
-    } else {
-        window.alert("Error deleting answer");
-    }
+        } catch (error: any) {
+            window.alert(error?.message || "Something went wrong");
         }
     };
 

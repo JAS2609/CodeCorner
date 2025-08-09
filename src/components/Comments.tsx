@@ -10,23 +10,14 @@ import { IconTrash } from "@tabler/icons-react";
 import { ID, Models } from "appwrite";
 import Link from "next/link";
 import React from "react";
-interface CommentDocument extends Models.Document {
-  content: string;
-  authorId: string;
-  author: {
-    $id: string;
-    name: string;
-    
-  };
-}
+
 const Comments = ({
     comments: _comments,
     type,
     typeId,
     className,
 }: {
- comments: Models.DocumentList<CommentDocument>;
-
+    comments: Models.DocumentList<Models.Document>;
     type: "question" | "answer";
     typeId: string;
     className?: string;
@@ -49,28 +40,11 @@ const Comments = ({
 
             setNewComment(() => "");
             setComments(prev => ({
-                ...prev,
                 total: prev.total + 1,
-                documents: [
-                    {
-                        ...response,
-                        content: newComment,
-                        authorId: user.$id,
-                        author: {
-                            $id: user.$id,
-                            name: user.name,
-                        
-                        },
-                    } as CommentDocument,
-                    ...prev.documents,
-                ],
+                documents: [{ ...response, author: user }, ...prev.documents],
             }));
-        } catch (error: unknown) {
-    if (error instanceof Error) {
-        window.alert(error.message);
-    } else {
-        window.alert("Error deleting answer");
-    }
+        } catch (error: any) {
+            window.alert(error?.message || "Error creating comment");
         }
     };
 
@@ -82,12 +56,8 @@ const Comments = ({
                 total: prev.total - 1,
                 documents: prev.documents.filter(comment => comment.$id !== commentId),
             }));
-        } catch (error: unknown) {
-    if (error instanceof Error) {
-        window.alert(error.message);
-    } else {
-        window.alert("Error deleting answer");
-    }
+        } catch (error: any) {
+            window.alert(error?.message || "Error deleting comment");
         }
     };
 
