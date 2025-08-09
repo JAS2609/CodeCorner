@@ -4,14 +4,7 @@ import { databases } from "@/models/server/config";
 import EditQues from "./EditQues";
 import { QuestionDocument } from "@/components/QuestionCard";
 
-interface EditQuesPageProps {
-  params: {
-    quesId: string;
-    quesName: string;
-  };
-}
-
-const Page = async ({ params }: EditQuesPageProps): Promise<JSX.Element> => {
+const Page = async ({ params }: { params: { quesId: string; quesName: string } }) => {
   const doc = await databases.getDocument<QuestionDocument>(
     db,
     questionCollection,
