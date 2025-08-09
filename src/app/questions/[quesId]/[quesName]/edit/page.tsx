@@ -11,7 +11,7 @@ interface EditQuesPageProps {
   };
 }
 
-const Page = async ({ params }: EditQuesPageProps) => {
+const Page = async ({ params }: EditQuesPageProps): Promise<JSX.Element> => {
   const { quesId } = params;
 
   const doc = await databases.getDocument<QuestionDocument>(
