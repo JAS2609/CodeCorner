@@ -1,6 +1,6 @@
+import React from "react";
 import { db, questionCollection } from "@/models/name";
 import { databases } from "@/models/server/config";
-import React from "react";
 import EditQues from "./EditQues";
 import { QuestionDocument } from "@/components/QuestionCard";
 
@@ -12,12 +12,10 @@ interface EditQuesPageProps {
 }
 
 const Page = async ({ params }: EditQuesPageProps): Promise<JSX.Element> => {
-  const { quesId } = params;
-
   const doc = await databases.getDocument<QuestionDocument>(
     db,
     questionCollection,
-    quesId
+    params.quesId
   );
 
   const question: QuestionDocument = {
