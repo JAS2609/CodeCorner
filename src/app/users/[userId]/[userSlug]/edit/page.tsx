@@ -7,18 +7,16 @@ import { Button } from "@/components/ui/button";
 import { account } from "@/models/client/config";
 import { useRouter } from "next/navigation";
 
-export default function EditUserPage({ params }: { params: { id: string } }) {
+export default function EditUserPage() {
   const router = useRouter();
-  
- 
+
   const [name, setName] = useState("");
   const [oldPassword, setOldPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  
+
   const [loadingName, setLoadingName] = useState(false);
   const [loadingPass, setLoadingPass] = useState(false);
 
-  
   const handleNameChange = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -26,13 +24,16 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
       await account.updateName(name);
       alert("Name updated successfully!");
       router.refresh();
-    } catch (err: any) {
-      alert(err.message || "Error updating name");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("Error updating name");
+      }
     } finally {
       setLoadingName(false);
     }
   };
-
 
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,8 +43,12 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
       alert("Password updated successfully!");
       setOldPassword("");
       setNewPassword("");
-    } catch (err: any) {
-      alert(err.message || "Error updating password");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        alert(err.message);
+      } else {
+        alert("Error updating password");
+      }
     } finally {
       setLoadingPass(false);
     }
@@ -53,7 +58,6 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
     <div className="container mx-auto max-w-xl py-20">
       <h1 className="mb-8 text-3xl font-bold">Edit Profile</h1>
 
-      
       <form
         onSubmit={handleNameChange}
         className="mb-10 rounded-lg border p-6 shadow"
@@ -75,6 +79,7 @@ export default function EditUserPage({ params }: { params: { id: string } }) {
           {loadingName ? "Saving..." : "Save Name"}
         </Button>
       </form>
+
       <form
         onSubmit={handlePasswordChange}
         className="rounded-lg border p-6 shadow"
