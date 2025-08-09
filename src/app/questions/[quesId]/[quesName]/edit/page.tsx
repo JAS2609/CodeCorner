@@ -4,7 +4,15 @@ import { databases } from "@/models/server/config";
 import EditQues from "./EditQues";
 import { QuestionDocument } from "@/components/QuestionCard";
 
-const Page = async ({ params }: { params: { quesId: string; quesName: string } }) => {
+// Define an interface for the component's props
+interface Props {
+  params: {
+    quesId: string;
+    quesName: string;
+  };
+}
+
+const Page = async ({ params }: Props) => {
   const doc = await databases.getDocument<QuestionDocument>(
     db,
     questionCollection,
