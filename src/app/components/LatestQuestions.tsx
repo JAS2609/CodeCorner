@@ -39,9 +39,6 @@ const LatestQuestions = async () => {
             };
         })
     );
-
-    console.log("Latest question")
-    console.log(questions)
     return (
         <div className="space-y-6">
             {questions.documents.map(question => (
