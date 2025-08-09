@@ -1,244 +1,93 @@
-
-import Answers from "@/components/Answers";
-import Comments from "@/components/Comments";
-import { MarkdownPreview } from "@/components/RTE";
-import VoteButtons from "@/components/VoteButtons";
-import { Particles } from "@/components/magicui/particles";
-import { ShimmerButton } from "@/components/magicui/shimmer-button";
-import { avatars, storage } from "@/models/client/config";
-import {
-  answerCollection,
-  db,
-  voteCollection,
-  questionCollection,
-  commentCollection,
-  questionAttachmentBucket,
-} from "@/models/name";
 import { databases, users } from "@/models/server/config";
-import { UserPrefs } from "@/store/auth";
-import convertDateToRelativeTime from "@/utils/relativeTime";
-import slugify from "@/utils/slugify";
-import Link from "next/link";
-import { Query, Models } from "node-appwrite";
+import { answerCollection, db, voteCollection, questionCollection } from "@/models/name";
+import { Query } from "node-appwrite";
 import React from "react";
-import DeleteQuestion from "./DeleteQuestion";
-import EditQuestion from "./EditQuestion";
-import { TracingBeam } from "@/components/ui/tracing-beam";
-import { QuestionDocument } from "@/components/QuestionCard";
+import Link from "next/link";
+import {ShimmerButton} from "@/components/magicui/shimmer-button";
+import QuestionCard from "@/components/QuestionCard";
+import { UserPrefs } from "@/store/auth";
+import Pagination from "@/components/Pagination";
+import Search from "../../Search";
+
 const Page = async ({
-  params,
+    searchParams,
 }: {
-  params: Promise<{ quesId: string; quesName: string }>;
+    searchParams: { page?: string; tag?: string; search?: string };
 }) => {
+    searchParams.page ||= "1";
 
-  const { quesId, quesName } = await params;
+    const queries = [
+        Query.orderDesc("$createdAt"),
+        Query.offset((+searchParams.page - 1) * 25),
+        Query.limit(25),
+    ];
 
-  const [question, answers, upvotes, downvotes, comments] = await Promise.all([
-    databases.getDocument<QuestionDocument>(
-      db,
-      questionCollection,
-      quesId
-    ),
-    databases.listDocuments<Models.Document>(db, answerCollection, [
-      Query.orderDesc("$createdAt"),
-      Query.equal("questionId", quesId),
-    ]),
-    databases.listDocuments<Models.Document>(db, voteCollection, [
-      Query.equal("typeId", quesId),
-      Query.equal("type", "question"),
-      Query.equal("voteStatus", "upvoted"),
-      Query.limit(1),
-    ]),
-    databases.listDocuments<Models.Document>(db, voteCollection, [
-      Query.equal("typeId", quesId),
-      Query.equal("type", "question"),
-      Query.equal("voteStatus", "downvoted"),
-      Query.limit(1),
-    ]),
-    databases.listDocuments<Models.Document>(db, commentCollection, [
-      Query.equal("type", "question"),
-      Query.equal("typeId", quesId),
-      Query.orderDesc("$createdAt"),
-    ]),
-  ]);
-
-  const author = await users.get<UserPrefs>(question.authorId);
-
-  [comments.documents, answers.documents] = await Promise.all([
-    Promise.all(
-      comments.documents.map(async (comment) => {
-        const commentAuthor = await users.get<UserPrefs>(comment.authorId);
-        return {
-          ...comment,
-          author: {
-            $id: commentAuthor.$id,
-            name: commentAuthor.name,
-            reputation: commentAuthor.prefs.reputation,
-          },
-        };
-      })
-    ),
-    Promise.all(
-      answers.documents.map(async (answer) => {
-        const [answerAuthor, answerComments, answerUpvotes, answerDownvotes] =
-          await Promise.all([
-            users.get<UserPrefs>(answer.authorId),
-            databases.listDocuments<Models.Document>(db, commentCollection, [
-              Query.equal("typeId", answer.$id),
-              Query.equal("type", "answer"),
-              Query.orderDesc("$createdAt"),
-            ]),
-            databases.listDocuments<Models.Document>(db, voteCollection, [
-              Query.equal("typeId", answer.$id),
-              Query.equal("type", "answer"),
-              Query.equal("voteStatus", "upvoted"),
-              Query.limit(1),
-            ]),
-            databases.listDocuments<Models.Document>(db, voteCollection, [
-              Query.equal("typeId", answer.$id),
-              Query.equal("type", "answer"),
-              Query.equal("voteStatus", "downvoted"),
-              Query.limit(1),
-            ]),
-          ]);
-
-        answerComments.documents = await Promise.all(
-          answerComments.documents.map(async (comment) => {
-            const commentAuthor = await users.get<UserPrefs>(comment.authorId);
-            return {
-              ...comment,
-              author: {
-                $id: commentAuthor.$id,
-                name: commentAuthor.name,
-                reputation: commentAuthor.prefs.reputation,
-              },
-            };
-          })
+    if (searchParams.tag) queries.push(Query.equal("tags", searchParams.tag));
+    if (searchParams.search)
+        queries.push(
+            Query.or([
+                Query.search("title", searchParams.search),
+                Query.search("content", searchParams.search),
+            ])
         );
 
-        return {
-          ...answer,
-          comments: answerComments,
-          upvotesDocuments: answerUpvotes,
-          downvotesDocuments: answerDownvotes,
-          author: {
-            $id: answerAuthor.$id,
-            name: answerAuthor.name,
-            reputation: answerAuthor.prefs.reputation,
-          },
-        };
-      })
-    ),
-  ]);
+    const questions = await databases.listDocuments(db, questionCollection, queries);
+    console.log("Questions", questions)
 
-  return (
-    <TracingBeam className="container pl-6">
-      <Particles
-        className="fixed inset-0 h-full w-full"
-        quantity={500}
-        ease={100}
-        color="#ffffff"
-        refresh
-      />
-      <div className="relative mx-auto px-4 pb-20 pt-36">
-        <div className="flex">
-          <div className="w-full">
-            <h1 className="mb-1 text-3xl font-bold">{question.title}</h1>
-            <div className="flex gap-4 text-sm">
-              <span>
-                Asked {convertDateToRelativeTime(new Date(question.$createdAt))}
-              </span>
-              <span>Answer {answers.total}</span>
-              <span>Votes {upvotes.total + downvotes.total}</span>
-            </div>
-          </div>
-          <Link href="/questions/ask" className="ml-auto inline-block shrink-0">
-            <ShimmerButton className="shadow-2xl">
-              <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white dark:from-white dark:to-slate-900/10 lg:text-lg">
-                Ask a question
-              </span>
-            </ShimmerButton>
-          </Link>
-        </div>
-        <hr className="my-4 border-white/40" />
-        <div className="flex gap-4">
-          <div className="flex shrink-0 flex-col items-center gap-4">
-            <VoteButtons
-              type="question"
-              id={question.$id}
-              className="w-full"
-              upvotes={upvotes}
-              downvotes={downvotes}
-            />
-            <EditQuestion
-              questionId={question.$id}
-              questionTitle={question.title}
-              authorId={question.authorId}
-            />
-            <DeleteQuestion
-              questionId={question.$id}
-              authorId={question.authorId}
-            />
-          </div>
-          <div className="w-full overflow-auto">
-            <MarkdownPreview
-              className="rounded-xl p-4"
-              source={question.content}
-            />
-            <picture>
-              <img
-                src={storage.getFileView(
-                  questionAttachmentBucket,
-                  question.attachmentId
-                )}
-                alt={question.title}
-                className="mt-3 rounded-lg"
-              />
-            </picture>
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm">
-              {question.tags.map((tag) => (
-                <Link
-                  key={tag}
-                  href={`/questions?tag=${tag}`}
-                  className="inline-block rounded-lg bg-white/10 px-2 py-0.5 duration-200 hover:bg-white/20"
-                >
-                  #{tag}
+    questions.documents = await Promise.all(
+        questions.documents.map(async ques => {
+            const [author, answers, votes] = await Promise.all([
+                users.get<UserPrefs>(ques.authorId),
+                databases.listDocuments(db, answerCollection, [
+                    Query.equal("questionId", ques.$id),
+                    Query.limit(1), // for optimization
+                ]),
+                databases.listDocuments(db, voteCollection, [
+                    Query.equal("type", "question"),
+                    Query.equal("typeId", ques.$id),
+                    Query.limit(1), // for optimization
+                ]),
+            ]);
+
+            return {
+                ...ques,
+                totalAnswers: answers.total,
+                totalVotes: votes.total,
+                author: {
+                    $id: author.$id,
+                    reputation: author.prefs.reputation,
+                    name: author.name,
+                },
+            };
+        })
+    );
+
+    return (
+        <div className="container mx-auto px-4 pb-20 pt-36">
+            <div className="mb-10 flex items-center justify-between">
+                <h1 className="text-3xl font-bold">All Questions</h1>
+                <Link href="/questions/ask">
+                    <ShimmerButton className="shadow-2xl">
+                        <span className="whitespace-pre-wrap text-center text-sm font-medium leading-none tracking-tight text-white dark:from-white dark:to-slate-900/10 lg:text-lg">
+                            Ask a question
+                        </span>
+                    </ShimmerButton>
                 </Link>
-              ))}
             </div>
-            <div className="mt-4 flex items-center justify-end gap-1">
-              <picture>
-                <img
-                  src={avatars.getInitials(author.name, 36, 36)}
-                  alt={author.name}
-                  className="rounded-lg"
-                />
-              </picture>
-              <div className="block leading-tight">
-                <Link
-                  href={`/users/${author.$id}/${slugify(author.name)}`}
-                  className="text-orange-500 hover:text-orange-600"
-                >
-                  {author.name}
-                </Link>
-                <p>
-                  <strong>{author.prefs.reputation}</strong>
-                </p>
-              </div>
+            <div className="mb-4">
+                <Search />
             </div>
-            <Comments
-              comments={comments}
-              className="mt-4"
-              type="question"
-              typeId={question.$id}
-            />
-            <hr className="my-4 border-white/40" />
-          </div>
+            <div className="mb-4">
+                <p>{questions.total} questions</p>
+            </div>
+            <div className="mb-4 max-w-3xl space-y-6">
+                {questions.documents.map(ques => (
+                    <QuestionCard key={ques.$id} ques={ques} />
+                ))}
+            </div>
+            <Pagination total={questions.total} limit={25} />
         </div>
-        <Answers answers={answers} questionId={question.$id} />
-      </div>
-    </TracingBeam>
-  );
+    );
 };
 
 export default Page;
