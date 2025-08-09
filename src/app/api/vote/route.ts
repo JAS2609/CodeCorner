@@ -114,10 +114,11 @@ export async function POST(request:NextRequest) {
                 status: 200,
             }
         );
-    } catch (error: any) {
-        return NextResponse.json(
-            { message: error?.message || "Error deleting answer" },
-            { status: error?.status || error?.code || 500 }
-        );
+    } catch (error: unknown) {
+    if (error instanceof Error) {
+        window.alert(error.message);
+    } else {
+        window.alert("Error deleting answer");
+    }
     }
 }

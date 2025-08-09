@@ -19,12 +19,12 @@ export async function POST(request:NextRequest){
       })
       return NextResponse.json(response,{status:201})
 
-    } catch (error:any) {
-       return NextResponse.json({
-       error: error?.message||"Error creating answer"
-       },{
-        status:error?.status||error.code||500
-       }) 
+    } catch (error: unknown) {
+    if (error instanceof Error) {
+        window.alert(error.message);
+    } else {
+        window.alert("Error deleting answer");
+    }
     }
 }
 export async function DELETE(request:NextRequest) {
@@ -40,11 +40,10 @@ export async function DELETE(request:NextRequest) {
       return NextResponse.json(response,{status:201})
 
 
-    } catch (error:any) {
-         return NextResponse.json({
-       error: error?.message||"Error deleting answer"
-       },{
-        status:error?.status||error.code||500
-       }) 
-    }
+    } catch (error: unknown) {
+    if (error instanceof Error) {
+        window.alert(error.message);
+    } else {
+        window.alert("Error deleting answer");
+    }}
 }

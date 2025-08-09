@@ -16,9 +16,12 @@ const DeleteQuestion = ({ questionId, authorId }: { questionId: string; authorId
             await databases.deleteDocument(db, questionCollection, questionId);
 
             router.push("/questions");
-        } catch (error: any) {
-            window.alert(error?.message || "Something went wrong");
-        }
+        } catch (error: unknown) {
+    if (error instanceof Error) {
+        window.alert(error.message);
+    } else {
+        window.alert("Error deleting answer");
+    }}
     };
 
     return user?.$id === authorId ? (

@@ -183,8 +183,12 @@ const QuestionForm = ({ question }: { question?: QuestionDocument }) => {
     try {
       const response = question ? await update() : await create();
       router.push(`/questions/${response.$id}/${slugify(formData.title)}`);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (error: unknown) {
+    if (error instanceof Error) {
+        window.alert(error.message);
+    } else {
+        window.alert("Error deleting answer");
+    }
     }
 
     setLoading(false);
