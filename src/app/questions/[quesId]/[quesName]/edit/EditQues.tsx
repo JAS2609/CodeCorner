@@ -1,16 +1,11 @@
 "use client";
 
+import React from "react";
+import { useRouter } from "next/navigation";
+import slugify from "@/utils/slugify";
 import QuestionForm from "@/components/QuestionForm";
 import { useAuthStore } from "@/store/auth";
-import slugify from "@/utils/slugify";
-import { Models } from "appwrite";
-import { useRouter } from "next/navigation";
-import React from "react";
-interface QuestionDocument extends Models.Document {
-  title: string;
-  authorId: string;
-  
-}
+import { QuestionDocument } from "@/components/QuestionCard"; // import your global interface
 
 const EditQues = ({ question }: { question: QuestionDocument }) => {
   const { user } = useAuthStore();
@@ -39,6 +34,5 @@ const EditQues = ({ question }: { question: QuestionDocument }) => {
     </div>
   );
 };
-
 
 export default EditQues;
