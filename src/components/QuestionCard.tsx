@@ -21,7 +21,9 @@ export interface QuestionDocument extends Models.Document {
     name: string;
     reputation: number;
   };
+  attachmentId?: string;  // add this line
 }
+
 
 const QuestionCard = ({ ques }: { ques: QuestionDocument }) => {
 
