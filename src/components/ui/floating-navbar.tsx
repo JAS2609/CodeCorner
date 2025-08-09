@@ -33,7 +33,8 @@ const disableHide = pathname.startsWith("/questions");
   useMotionValueEvent(scrollYProgress, "change", (current) => {
     if (typeof current === "number") {
       if (disableHide) return; 
-      let direction = current - scrollYProgress.getPrevious()!;
+      const direction = current - scrollYProgress.getPrevious()!;
+
       if (direction < 0) {
         setVisible(true);
       } else {
