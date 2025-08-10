@@ -11,18 +11,17 @@ import React from "react";
 
 interface PageProps {
   params: Promise<{ userId: string; userSlug: string }>;
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }
 
 const Page = async ({ params, searchParams }: PageProps) => {
   const { userId } = await params;
-
-  searchParams.page ||= "1";
+  const { page = "1" } = await searchParams;
 
   const queries = [
     Query.equal("authorId", userId),
     Query.orderDesc("$createdAt"),
-    Query.offset((+searchParams.page - 1) * 25),
+    Query.offset((+page - 1) * 25),
     Query.limit(25),
   ];
 
