@@ -2,8 +2,8 @@ import Answers from "@/components/Answers";
 import Comments from "@/components/Comments";
 import { MarkdownPreview } from "@/components/RTE";
 import VoteButtons from "@/components/VoteButtons";
-import {Particles} from "@/components/magicui/particles";
-import {ShimmerButton} from "@/components/magicui/shimmer-button";
+import { Particles } from "@/components/magicui/particles";
+import { ShimmerButton } from "@/components/magicui/shimmer-button";
 import { avatars } from "@/models/client/config";
 import {
     answerCollection,
@@ -26,34 +26,42 @@ import DeleteQuestion from "./DeleteQuestion";
 import EditQuestion from "./EditQuestion";
 import { TracingBeam } from "@/components/ui/tracing-beam";
 
-const Page = async ({ params }: { params: { quesId: string; quesName: string } }) => {
+export const dynamic = "force-dynamic";
+
+interface PageProps {
+    params: Promise<{ quesId: string; quesName: string }>;
+}
+
+export default async function Page({ params }: PageProps) {
+    const { quesId, quesName } = await params;
+
     const [question, answers, upvotes, downvotes, comments] = await Promise.all([
-        databases.getDocument(db, questionCollection, params.quesId),
+        databases.getDocument(db, questionCollection, quesId),
         databases.listDocuments(db, answerCollection, [
             Query.orderDesc("$createdAt"),
-            Query.equal("questionId", params.quesId),
+            Query.equal("questionId", quesId),
         ]),
         databases.listDocuments(db, voteCollection, [
-            Query.equal("typeId", params.quesId),
+            Query.equal("typeId", quesId),
             Query.equal("type", "question"),
             Query.equal("voteStatus", "upvoted"),
-            Query.limit(1), // for optimization
+            Query.limit(1),
         ]),
         databases.listDocuments(db, voteCollection, [
-            Query.equal("typeId", params.quesId),
+            Query.equal("typeId", quesId),
             Query.equal("type", "question"),
             Query.equal("voteStatus", "downvoted"),
-            Query.limit(1), // for optimization
+            Query.limit(1),
         ]),
         databases.listDocuments(db, commentCollection, [
             Query.equal("type", "question"),
-            Query.equal("typeId", params.quesId),
+            Query.equal("typeId", quesId),
             Query.orderDesc("$createdAt"),
         ]),
     ]);
 
-    // since it is dependent on the question, we fetch it here outside of the Promise.all
     const author = await users.get<UserPrefs>(question.authorId);
+
     [comments.documents, answers.documents] = await Promise.all([
         Promise.all(
             comments.documents.map(async comment => {
@@ -81,13 +89,13 @@ const Page = async ({ params }: { params: { quesId: string; quesName: string } }
                         Query.equal("typeId", answer.$id),
                         Query.equal("type", "answer"),
                         Query.equal("voteStatus", "upvoted"),
-                        Query.limit(1), // for optimization
+                        Query.limit(1),
                     ]),
                     databases.listDocuments(db, voteCollection, [
                         Query.equal("typeId", answer.$id),
                         Query.equal("type", "answer"),
                         Query.equal("voteStatus", "downvoted"),
-                        Query.limit(1), // for optimization
+                        Query.limit(1),
                     ]),
                 ]);
 
@@ -170,12 +178,7 @@ const Page = async ({ params }: { params: { quesId: string; quesName: string } }
                         <MarkdownPreview className="rounded-xl p-4" source={question.content} />
                         <picture>
                             <img
-                                src={
-                                    storage.getFileView(
-                                        questionAttachmentBucket,
-                                        question.attachmentId
-                                    )
-                                }
+                                src={storage.getFileView(questionAttachmentBucket, question.attachmentId)}
                                 alt={question.title}
                                 className="mt-3 rounded-lg"
                             />
@@ -224,6 +227,4 @@ const Page = async ({ params }: { params: { quesId: string; quesName: string } }
             </div>
         </TracingBeam>
     );
-};
-
-export default Page;
+}
