@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import Pagination from "@/components/Pagination";
 import { MarkdownPreview } from "@/components/RTE";
 import { answerCollection, db, questionCollection } from "@/models/name";
@@ -12,8 +14,9 @@ interface PageProps {
   searchParams: { page?: string };
 }
 
-export default async function Page({ params, searchParams }: PageProps) {
-  const { userId, userSlug } = await params; // ✅ must await
+const Page = async ({ params, searchParams }: PageProps) => {
+  const { userId } = await params;
+
   searchParams.page ||= "1";
 
   const queries = [
@@ -26,13 +29,10 @@ export default async function Page({ params, searchParams }: PageProps) {
   const answers = await databases.listDocuments(db, answerCollection, queries);
 
   answers.documents = await Promise.all(
-    answers.documents.map(async (ans) => {
-      const question = await databases.getDocument(
-        db,
-        questionCollection,
-        ans.questionId,
-        [Query.select(["title"])]
-      );
+    answers.documents.map(async ans => {
+      const question = await databases.getDocument(db, questionCollection, ans.questionId, [
+        Query.select(["title"]),
+      ]);
       return { ...ans, question };
     })
   );
@@ -43,7 +43,7 @@ export default async function Page({ params, searchParams }: PageProps) {
         <p>{answers.total} answers</p>
       </div>
       <div className="mb-4 max-w-3xl space-y-6">
-        {answers.documents.map((ans) => (
+        {answers.documents.map(ans => (
           <div key={ans.$id}>
             <div className="max-h-40 overflow-auto">
               <MarkdownPreview source={ans.content} className="rounded-lg p-4" />
@@ -60,4 +60,6 @@ export default async function Page({ params, searchParams }: PageProps) {
       <Pagination total={answers.total} limit={25} />
     </div>
   );
-}
+};
+
+export default Page;
