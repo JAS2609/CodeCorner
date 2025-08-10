@@ -10,18 +10,17 @@ import React from "react";
 
 interface PageProps {
   params: Promise<{ userId: string; userSlug: string }>;
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }
 
 const Page = async ({ params, searchParams }: PageProps) => {
   const { userId } = await params;
-
-  searchParams.page ||= "1";
+  const { page = "1" } = await searchParams;
 
   const queries = [
     Query.equal("authorId", userId),
     Query.orderDesc("$createdAt"),
-    Query.offset((+searchParams.page - 1) * 25),
+    Query.offset((+page - 1) * 25),
     Query.limit(25),
   ];
 
@@ -33,12 +32,12 @@ const Page = async ({ params, searchParams }: PageProps) => {
         users.get<UserPrefs>(ques.authorId),
         databases.listDocuments(db, answerCollection, [
           Query.equal("questionId", ques.$id),
-          Query.limit(1), // for optimization
+          Query.limit(1),
         ]),
         databases.listDocuments(db, voteCollection, [
           Query.equal("type", "question"),
           Query.equal("typeId", ques.$id),
-          Query.limit(1), // for optimization
+          Query.limit(1),
         ]),
       ]);
 
