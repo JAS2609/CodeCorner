@@ -28,28 +28,53 @@ const Page = async ({
     const votes = await databases.listDocuments(db, voteCollection, query);
 
     votes.documents = await Promise.all(
-        votes.documents.map(async vote => {
-            const questionOfTypeQuestion =
-                vote.type === "question"
-                    ? await databases.getDocument(db, questionCollection, vote.typeId, [
-                          Query.select(["title"]),
-                      ])
-                    : null;
+        votes.documents.map(async (vote) => {
+            if (vote.type === "question") {
+                const questionOfTypeQuestion = await databases.getDocument(
+                    db,
+                    questionCollection,
+                    vote.typeId,
+                    [Query.select(["title"])]
+                );
 
-            if (questionOfTypeQuestion) {
-                return {
-                    ...vote,
-                    question: questionOfTypeQuestion,
-                };
+                if (questionOfTypeQuestion) {
+                    return {
+                        ...vote,
+                        question: questionOfTypeQuestion,
+                    };
+                }
+
+               
+                return vote;
             }
 
-            const answer = await databases.getDocument(db, answerCollection, vote.typeId);
-            const questionOfTypeAnswer = await databases.getDocument(
-                db,
-                questionCollection,
-                answer.questionId,
-                [Query.select(["title"])]
-            );
+            
+            let answer = null;
+            try {
+                answer = await databases.getDocument(db, answerCollection, vote.typeId);
+            } catch (error: any) {
+                if (error.message.includes("could not be found")) {
+                    console.warn(`Answer with ID ${vote.typeId} not found.`);
+                    return vote; // Return vote without question to avoid crashing
+                }
+                throw error; // rethrow unknown errors
+            }
+
+            let questionOfTypeAnswer = null;
+            try {
+                questionOfTypeAnswer = await databases.getDocument(
+                    db,
+                    questionCollection,
+                    answer.questionId,
+                    [Query.select(["title"])]
+                );
+            } catch (error: any) {
+                if (error.message.includes("could not be found")) {
+                    console.warn(`Question with ID ${answer.questionId} not found.`);
+                    return vote;
+                }
+                throw error;
+            }
 
             return {
                 ...vote,
@@ -100,21 +125,27 @@ const Page = async ({
                 </ul>
             </div>
             <div className="mb-4 max-w-3xl space-y-6">
-                {votes.documents.map(vote => (
+                {votes.documents.map((vote) => (
                     <div
                         key={vote.$id}
                         className="rounded-xl border border-white/40 p-4 duration-200 hover:bg-white/10"
                     >
                         <div className="flex">
                             <p className="mr-4 shrink-0">{vote.voteStatus}</p>
-                            <p>
-                                <Link
-                                    href={`/questions/${vote.question.$id}/${slugify(vote.question.title)}`}
-                                    className="text-orange-500 hover:text-orange-600"
-                                >
-                                    {vote.question.title}
-                                </Link>
-                            </p>
+                            {vote.question ? (
+                                <p>
+                                    <Link
+                                        href={`/questions/${vote.question.$id}/${slugify(
+                                            vote.question.title
+                                        )}`}
+                                        className="text-orange-500 hover:text-orange-600"
+                                    >
+                                        {vote.question.title}
+                                    </Link>
+                                </p>
+                            ) : (
+                                <p className="italic text-gray-400">Question not found</p>
+                            )}
                         </div>
                         <p className="text-right text-sm">
                             {convertDateToRelativeTime(new Date(vote.$createdAt))}

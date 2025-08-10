@@ -3,10 +3,18 @@ import { databases } from "@/models/server/config";
 import React from "react";
 import EditQues from "./EditQues";
 
-const Page = async ({ params }: { params: { quesId: string; quesName: string } }) => {
-    const question = await databases.getDocument(db, questionCollection, params.quesId);
+export const dynamic = "force-dynamic";
 
-    return <EditQues question={question} />;
-};
+interface PageProps {
+  params: Promise<{ quesId: string; quesName: string }>;
+}
 
-export default Page;
+export default async function Page({ params }: PageProps) {
+  const { quesId, quesName } = await params;
+
+  if (!quesId) throw new Error("Missing quesId");
+
+  const question = await databases.getDocument(db, questionCollection, quesId);
+
+  return <EditQues question={question} />;
+}
