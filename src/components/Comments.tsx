@@ -10,21 +10,22 @@ import { IconTrash } from "@tabler/icons-react";
 import { ID, Models } from "appwrite";
 import Link from "next/link";
 import React from "react";
-
+import { CommentDoc } from "@/types/appwrite";
 const Comments = ({
-    comments: _comments,
-    type,
-    typeId,
-    className,
+  comments: _comments,
+  type,
+  typeId,
+  className,
 }: {
-    comments: Models.DocumentList<Models.Document>;
-    type: "question" | "answer";
-    typeId: string;
-    className?: string;
+  comments: Models.DocumentList<CommentDoc>;
+  type: "question" | "answer";
+  typeId: string;
+  className?: string;
 }) => {
-    const [comments, setComments] = React.useState(_comments);
-    const [newComment, setNewComment] = React.useState("");
-    const { user } = useAuthStore();
+  const [comments, setComments] = React.useState(_comments);
+  const [newComment, setNewComment] = React.useState("");
+  const { user } = useAuthStore();
+
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
@@ -39,10 +40,30 @@ const Comments = ({
             });
 
             setNewComment(() => "");
-            setComments(prev => ({
-                total: prev.total + 1,
-                documents: [{ ...response, author: user }, ...prev.documents],
-            }));
+          setComments(prev => ({
+  total: prev.total + 1,
+  documents: [
+    {
+      $id: response.$id,
+      $collectionId: response.$collectionId,
+      $databaseId: response.$databaseId,
+      $createdAt: response.$createdAt,
+      $updatedAt: response.$updatedAt,
+      $permissions: response.$permissions,
+      content: newComment,
+      authorId: user.$id,
+      author: {
+        $id: user.$id,
+        name: user.name,
+        reputation: user.prefs.reputation,
+      },
+      type,
+      typeId,
+    } as CommentDoc,
+    ...prev.documents,
+  ],
+}));
+
         } catch (error: any) {
             window.alert(error?.message || "Error creating comment");
         }

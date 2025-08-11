@@ -25,7 +25,11 @@ import React from "react";
 import DeleteQuestion from "./DeleteQuestion";
 import EditQuestion from "./EditQuestion";
 import { TracingBeam } from "@/components/ui/tracing-beam";
+import { VoteDoc } from "@/types/appwrite";
+import { Models } from "appwrite";
+import { CommentDoc } from "@/types/appwrite";
 
+import { AnswerDoc } from "@/types/appwrite";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
@@ -41,13 +45,13 @@ export default async function Page({ params }: PageProps) {
             Query.orderDesc("$createdAt"),
             Query.equal("questionId", quesId),
         ]),
-        databases.listDocuments(db, voteCollection, [
+        databases.listDocuments<VoteDoc>(db, voteCollection, [
             Query.equal("typeId", quesId),
             Query.equal("type", "question"),
             Query.equal("voteStatus", "upvoted"),
             Query.limit(1),
         ]),
-        databases.listDocuments(db, voteCollection, [
+        databases.listDocuments<VoteDoc>(db, voteCollection, [
             Query.equal("typeId", quesId),
             Query.equal("type", "question"),
             Query.equal("voteStatus", "downvoted"),
@@ -89,13 +93,13 @@ export default async function Page({ params }: PageProps) {
                         Query.equal("typeId", answer.$id),
                         Query.equal("type", "answer"),
                         Query.equal("voteStatus", "upvoted"),
-                        Query.limit(1),
+                        //Query.limit(1),
                     ]),
                     databases.listDocuments(db, voteCollection, [
                         Query.equal("typeId", answer.$id),
                         Query.equal("type", "answer"),
                         Query.equal("voteStatus", "downvoted"),
-                        Query.limit(1),
+                       Query.limit(1),
                     ]),
                 ]);
 
@@ -160,7 +164,7 @@ export default async function Page({ params }: PageProps) {
                 <hr className="my-4 border-white/40" />
                 <div className="flex gap-4">
                     <div className="flex shrink-0 flex-col items-center gap-4">
-                        <VoteButtons
+                         <VoteButtons
                             type="question"
                             id={question.$id}
                             className="w-full"
@@ -215,7 +219,7 @@ export default async function Page({ params }: PageProps) {
                             </div>
                         </div>
                         <Comments
-                            comments={comments}
+                           comments={question.comments ?? { documents: [], total: 0 } as Models.DocumentList<CommentDoc>}
                             className="mt-4"
                             type="question"
                             typeId={question.$id}
@@ -223,7 +227,7 @@ export default async function Page({ params }: PageProps) {
                         <hr className="my-4 border-white/40" />
                     </div>
                 </div>
-                <Answers answers={answers} questionId={question.$id} />
+                <Answers answers={answers as unknown as Models.DocumentList<AnswerDoc>} questionId={question.$id} />
             </div>
         </TracingBeam>
     );

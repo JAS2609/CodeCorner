@@ -1,7 +1,8 @@
-import { db, questionCollection } from "@/models/name";
+import { db, questionCollection } from "@/models/name"; 
 import { databases } from "@/models/server/config";
 import React from "react";
 import EditQues from "./EditQues";
+import { QuestionDoc } from "@/types/appwrite"; // import your custom type
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export default async function Page({ params }: PageProps) {
 
   if (!quesId) throw new Error("Missing quesId");
 
-  const question = await databases.getDocument(db, questionCollection, quesId);
+  const question = await databases.getDocument<QuestionDoc>(db, questionCollection, quesId);
 
   return <EditQues question={question} />;
 }

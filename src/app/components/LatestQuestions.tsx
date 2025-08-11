@@ -4,7 +4,7 @@ import { databases, users } from "@/models/server/config";
 import { UserPrefs } from "@/store/auth";
 import { Query } from "node-appwrite";
 import React from "react";
-
+import { QuestionDoc } from "@/types/appwrite";
 const LatestQuestions = async () => {
     const questions = await databases.listDocuments(db, questionCollection, [
         Query.limit(5),
@@ -12,7 +12,7 @@ const LatestQuestions = async () => {
     ]);
     console.log("Fetched Questions:", questions);
 
-    questions.documents = await Promise.all(
+ const enrichedQuestions = await Promise.all(
         questions.documents.map(async ques => {
             const [author, answers, votes] = await Promise.all([
                 users.get<UserPrefs>(ques.authorId),
@@ -28,7 +28,7 @@ const LatestQuestions = async () => {
             ]);
 
             return {
-                ...ques,
+                  ...(ques as unknown as QuestionDoc),
                 totalAnswers: answers.total,
                 totalVotes: votes.total,
                 author: {
@@ -44,9 +44,9 @@ const LatestQuestions = async () => {
     console.log(questions)
     return (
         <div className="space-y-6">
-            {questions.documents.map(question => (
-                <QuestionCard key={question.$id} ques={question} />
-            ))}
+            {enrichedQuestions.map((ques) => (
+                        <QuestionCard key={ques.$id} ques={ques} />
+                    ))}
         </div>
     );
 };

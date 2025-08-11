@@ -3,11 +3,11 @@
 import QuestionForm from "@/components/QuestionForm";
 import { useAuthStore } from "@/store/auth";
 import slugify from "@/utils/slugify";
-import { Models } from "appwrite";
+import { QuestionDoc } from "@/types/appwrite";
 import { useRouter } from "next/navigation";
 import React from "react";
 
-const EditQues = ({ question }: { question: Models.Document }) => {
+const EditQues = ({ question }: { question: QuestionDoc }) => {
     const { user } = useAuthStore();
     const router = useRouter();
 
@@ -15,7 +15,7 @@ const EditQues = ({ question }: { question: Models.Document }) => {
         if (question.authorId !== user?.$id) {
             router.push(`/questions/${question.$id}/${slugify(question.title)}`);
         }
-    }, []);
+    }, [question, user, router]);
 
     if (user?.$id !== question.authorId) return null;
 

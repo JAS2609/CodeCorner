@@ -7,7 +7,7 @@ import { databases, users } from "@/models/server/config";
 import { UserPrefs } from "@/store/auth";
 import { Query } from "node-appwrite";
 import React from "react";
-
+import { QuestionDoc } from "@/types/appwrite"; 
 interface PageProps {
   params: Promise<{ userId: string; userSlug: string }>;
   searchParams: Promise<{ page?: string }>;
@@ -26,8 +26,9 @@ const Page = async ({ params, searchParams }: PageProps) => {
 
   const questions = await databases.listDocuments(db, questionCollection, queries);
 
-  questions.documents = await Promise.all(
-    questions.documents.map(async ques => {
+  // Map and enrich questions with author and stats, cast to QuestionDoc
+  const enrichedQuestions: QuestionDoc[] = await Promise.all(
+    questions.documents.map(async (ques) => {
       const [author, answers, votes] = await Promise.all([
         users.get<UserPrefs>(ques.authorId),
         databases.listDocuments(db, answerCollection, [
@@ -42,7 +43,7 @@ const Page = async ({ params, searchParams }: PageProps) => {
       ]);
 
       return {
-        ...ques,
+        ...(ques as unknown as QuestionDoc),
         totalAnswers: answers.total,
         totalVotes: votes.total,
         author: {
@@ -60,7 +61,7 @@ const Page = async ({ params, searchParams }: PageProps) => {
         <p>{questions.total} questions</p>
       </div>
       <div className="mb-4 max-w-3xl space-y-6">
-        {questions.documents.map(ques => (
+        {enrichedQuestions.map((ques) => (
           <QuestionCard key={ques.$id} ques={ques} />
         ))}
       </div>
